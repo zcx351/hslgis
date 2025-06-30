@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红树林生态节点图 - D3.js - NRD Studio</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        #title {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 100;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        #graph-container {
+            width: 100vw;
+            height: 100vh;
+            box-sizing: border-box;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+        #graph-svg-container {
+            width: 100%;
+            height: 100%;
+        }
+        .node circle {
+            stroke-width: 2px;
+        }
+        .node rect {
+            stroke-width: 2px;
+            rx: 5;
+            ry: 5;
+        }
+        .node text {
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        .node .text-inside {
+            dominant-baseline: middle;
+        }
+        .node .text-bottom {
+            dominant-baseline: hanging;
+        }
+        .link {
+            fill: none;
+        }
+        .link-text {
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            border-radius: 4px;
+            pointer-events: none;
+            max-width: 300px;
+            z-index: 200;
+        }
+        #save-status {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 100;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="title"></div>
+    <div id="graph-container">
+        <div id="graph-svg-container"></div>
+    </div>
+    <div class="tooltip" style="opacity: 0;"></div>
+    <div id="save-status"></div>
+
+    <script>
+        const nsData = {"title":"红树林生态节点图","layout":"force","node":{"id":"","name":"","desc":"","x":0,"y":0,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#666","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#3498db","borderWidth":2,"borderColor":"#2980b9"},"image": null},"link":{"source":"","target":"","relation":"","symbol":["none","arrow"],"symbolSize":8,"label":{"color":"#666","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12},"lineStyle":{"color":"#95a5a6","width":2,"curveness":0.2}},"nodes":[{"id":1,"name":"红树林","desc":"红树林（Mangrove）是生长在热带、亚热带海岸潮间带，由红树植物为主体的常绿乔木或灌木组成的湿地木本植物群落，在净化海水、防风消浪、固碳储碳、维护生物多样性等方面发挥着重要作用，有“海岸卫士”“海洋绿肺”美誉，也是珍稀濒危水禽重要栖息地，鱼、虾、蟹、贝类生长繁殖场所。中国红树植物分布在广东、广西、海南、福建、浙江等省区。","x":100,"y":100,"r":60,"width":120,"height":120,"symbol":"circle","symbolSize":60,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"bold","fontSize":30,"position":"inside"},"itemStyle":{"color":"#FFFFFF","borderWidth":5,"borderColor":"#417505","image": null}},{"id":4,"name":"潮间带生物","x":100,"y":100,"r":40,"width":80,"height":80,"symbol":"circle","symbolSize":40,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"bold","fontSize":15,"position":"inside"},"itemStyle":{"color":"#FFFFFF","borderWidth":3,"borderColor":"#4a90e2","image": null}},{"id":6,"name":"招潮蟹","desc":"栖息红树林滩涂，雄蟹大螯醒目，体色随潮变化，以沉积物有机物为食，是红树林生态指示物种","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":7,"name":"弹涂鱼","desc":"栖息红树林潮间带，能水陆两栖，胸鳍特化可爬行，以藻类和小型生物为食","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":8,"name":"红树蚬","desc":"栖红树林潮间带泥滩，壳近三角形，以浮游生物为食，是滩涂重要底栖生物","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":9,"name":"大眼蟹","desc":"栖红树林潮间带，眼柄长似火柴，善快速爬行，以沉积物有机质为食，是滩涂常见蟹类","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":10,"name":"斑节对虾","desc":"栖红树林浅水区，体具黑褐色斑节，是大型经济虾类，以底栖生物为食，幼体依赖红树林育幼","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":12,"name":"沙蚕","desc":"栖红树林滩涂泥沙中，身体分节具疣足，是鱼类等天敌的饵料，也可分解有机物促进物质循环","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":13,"name":"虾虎鱼","desc":"栖红树林潮间带，体型小巧，喜栖息于洞穴或石缝，以浮游动物和有机碎屑为食，是滩涂常见鱼类","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":15,"name":"鼓虾","desc":"栖红树林洞穴或珊瑚礁，大螯特化能闭合发声击晕猎物，喜与海绵等共生，是潮间带独特虾类","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":17,"name":"方蟹","desc":"栖红树林潮间带滩涂，体呈方形，善攀爬红树林根系，以落叶和有机质为食，是生态系统的分解者","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":18,"name":"白头鹎","desc":"中国“三有”保护动物，常活动于红树林灌丛，头具白色枕羽，杂食性，啄食果实与昆虫，是常见留鸟。","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":20,"name":"鸟类","x":100,"y":100,"r":40,"width":80,"height":80,"symbol":"circle","symbolSize":40,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"bold","fontSize":29,"position":"inside"},"itemStyle":{"color":"#FFFFFF","borderWidth":3,"borderColor":"#f5a623","image": null}},{"id":22,"name":"黑腹滨鹬","desc":"黑腹滨鹬是鹬科滨鹬属鸟类，下体白色，颊至胸有黑褐色细纵纹。腹中央黑色，呈大型黑斑","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":23,"name":"黑脸琵鹭","desc":"国家一级保护野生动物，嘴似琵琶，体羽黑白，栖息红树林湿地，主食鱼虾，全球濒危，中国为重要越冬地。","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":24,"name":"青脚鹬","desc":"栖息红树林滩涂，脚青黑，嘴微上翘，主食软体动物，迁徙季常见，是湿地生态指示物种","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":25,"name":"白额燕鸥","desc":"国家一级保护野生动物，额白，夏羽头顶黑，冬羽黑色缩减，嘴黄黑相间，常集群活动于红树林","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":26,"name":"黄嘴白鹭","desc":"国家一级保护野生动物，栖息红树林，嘴黄，体白，主食鱼虾，繁殖期枕生蓑羽，属濒危物种，依赖红树林湿地生存。","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":27,"name":"普通鸬鹚","desc":"栖息红树林，体黑具金属光泽，善潜水捕鱼，常集群活动，是红树林湿地常见水鸟","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}},{"id":28,"name":"矶鹬","desc":"栖息红树林滩涂，脚青黑，嘴微上翘，主食软体动物，迁徙季常见，是湿地生态指示物种","x":100,"y":100,"r":20,"width":40,"height":40,"symbol":"circle","symbolSize":20,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":12,"position":"bottom"},"itemStyle":{"color":"#FFFFFF","borderWidth":1,"borderColor":"#000000","image": null}}],"links":[{"source":1,"target":4,"relation":"","symbol":["none","none"],"symbolSize":8,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#417505","width":2,"curveness":0}},{"source":4,"target":6,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":4,"target":17,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":4,"target":9,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":4,"target":8,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":4,"target":13,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":4,"target":12,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":4,"target":10,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":4,"target":15,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":4,"target":7,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":1,"target":20,"relation":"","symbol":["none","none"],"symbolSize":8,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#417505","width":2,"curveness":0}},{"source":20,"target":22,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":20,"target":23,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":20,"target":18,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":20,"target":28,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":20,"target":27,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":20,"target":26,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":20,"target":25,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}},{"source":20,"target":24,"relation":"","symbol":["none","arrow"],"symbolSize":7,"label":{"color":"#000000","fontFamily":"sans-serif","fontWeight":"normal","fontSize":10},"lineStyle":{"color":"#000000","width":1,"curveness":0}}],"scene":{"backgroundColor":"#f2fbf2","nodeStrength":-500,"linkDistance":150,"chargeStrength":-1000,"forceXStrength":0.1,"forceYStrength":0.1},"tooltip":{"show":true,"backgroundColor":"#000000","borderWidth":1,"borderColor":"#000000","textStyle":{"color":"#ffffff","fontSize":"12px"}}};
+
+        // IndexedDB 数据库变量
+        let db;
+        const DATABASE_NAME = 'mangrove_node_images';
+        const STORE_NAME = 'node_images';
+        const saveStatus = d3.select('#save-status');
+
+        // 初始化IndexedDB
+        function initDatabase() {
+            const request = indexedDB.open(DATABASE_NAME, 1);
+
+            request.onerror = function(event) {
+                console.error("打开数据库失败:", event.target.error);
+                showStatus("图片保存功能不可用", "error");
+            };
+
+            request.onupgradeneeded = function(event) {
+                db = event.target.result;
+                const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'nodeId' });
+                console.log("数据库升级完成");
+            };
+
+            request.onsuccess = function(event) {
+                db = event.target.result;
+                console.log("数据库打开成功");
+                loadSavedImages();
+                showStatus("已准备好保存图片", "success");
+            };
+        }
+
+        // 从数据库加载所有保存的图片
+        function loadSavedImages() {
+            if (!db) return;
+
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const objectStore = transaction.objectStore(STORE_NAME);
+            const request = objectStore.getAll();
+
+            request.onsuccess = function(event) {
+                const savedImages = event.target.result;
+                console.log("加载保存的图片:", savedImages);
+                
+                savedImages.forEach(item => {
+                    const nodeData = nsData.nodes.find(n => n.id === item.nodeId);
+                    if (nodeData) {
+                        nodeData.itemStyle.image = item.imageData;
+                        // 确保图片加载后立即更新显示
+                        updateNodeImage(item.nodeId, item.imageData);
+                    }
+                });
+            };
+
+            request.onerror = function(event) {
+                console.error("加载图片失败:", event.target.error);
+            };
+        }
+
+        // 更新节点图片显示
+        function updateNodeImage(nodeId, imageData) {
+            if (!window.nodes) return;
+            
+            const node = window.nodes.filter(d => d.id === nodeId);
+            if (node.empty()) return;
+            
+            const nodeElement = node.node();
+            if (!nodeElement) return;
+            
+            const d3Node = d3.select(nodeElement);
+            let imageElement = d3Node.select("image");
+            
+            if (imageElement.empty()) {
+                // 创建新图片元素
+                imageElement = d3Node.append("image")
+                   .attr("clip-path", "url(#clip-circle-" + nodeId + ")")
+                   .attr("x", -nsData.nodes.find(n => n.id === nodeId).r)
+                   .attr("y", -nsData.nodes.find(n => n.id === nodeId).r)
+                   .attr("width", nsData.nodes.find(n => n.id === nodeId).r * 2)
+                   .attr("height", nsData.nodes.find(n => n.id === nodeId).r * 2)
+                   .attr("preserveAspectRatio", "xMidYMid slice");
+            }
+            
+            // 设置图片源
+            imageElement.attr("xlink:href", imageData);
+            
+            // 添加淡入动画效果
+            imageElement.style("opacity", 0)
+               .transition()
+               .duration(500)
+               .style("opacity", 1);
+        }
+
+        // 显示保存状态
+        function showStatus(message, type = "info") {
+            saveStatus.text(message)
+               .style("color", type === "error" ? "red" : type === "success" ? "green" : "black")
+               .style("opacity", 1)
+               .transition()
+               .duration(3000)
+               .style("opacity", 0);
+        }
+
+        function formatter(d) {
+            if (d.desc) {
+                return '<strong>' + d.name + '</strong><br/>' + d.desc;
+            }
+            return d.name;
+        }
+
+        // 初始化图形
+        function initGraph() {
+            const container = d3.select("#graph-svg-container");
+            const tooltip = d3.select(".tooltip");
+            const title = d3.select("#title");
+
+            // 设置标题
+            title.text(nsData.title || "关系图谱");
+
+            // 设置工具提示样式
+            if (nsData.tooltip.show) {
+                tooltip
+                   .style("background-color", nsData.tooltip.backgroundColor)
+                   .style("color", nsData.tooltip.textStyle.color)
+                   .style("font-size", nsData.tooltip.textStyle.fontSize)
+                   .style("border-width", nsData.tooltip.borderWidth + "px")
+                   .style("border-style", "solid")
+                   .style("border-color", nsData.tooltip.borderColor);
+            }
+
+            // 获取容器尺寸
+            const width = document.getElementById("graph-container").clientWidth;
+            const height = document.getElementById("graph-container").clientHeight;
+
+            // 创建SVG画布
+            const svg = container.append("svg")
+               .attr("width", width)
+               .attr("height", height)
+               .style("background-color", nsData.scene.backgroundColor);
+
+            // 创建可拖动的图形组
+            const zoomGroup = svg.append("g");
+
+            // 设置缩放和拖动行为
+            const zoom = d3.zoom()
+               .scaleExtent([0.1, 10])  // 扩大缩放范围，便于查看细节
+               .on("zoom", (event) => {
+                    zoomGroup.attr("transform", event.transform);
+                });
+
+            svg.call(zoom);
+
+            // 创建箭头定义
+            const defs = zoomGroup.append("defs");
+
+            // 创建连线箭头标记
+            defs.append("marker")
+               .attr("id", "arrowhead")
+               .attr("viewBox", "0 0 10 10")
+               .attr("refX", 8)
+               .attr("refY", 5)
+               .attr("markerWidth", 6)
+               .attr("markerHeight", 6)
+               .attr("orient", "auto")
+               .append("path")
+               .attr("d", "M0,0 L10,5 L0,10 z")
+               .attr("fill", "#95a5a6");
+
+            // 创建力导向图模拟
+            const simulation = d3.forceSimulation()
+               .force("link", d3.forceLink().id(d => d.id).distance(d => {
+                    // 根据节点大小动态调整连线距离
+                    return (d.source.r + d.target.r) * 2.5;  // 增加连线距离，避免节点拥挤
+                }))
+               .force("charge", d3.forceManyBody().strength(d => {
+                    // 根据节点大小动态调整排斥力，大节点排斥力更大
+                    return -Math.pow(d.r, 2) * 1.5;
+                }))
+               .force("center", d3.forceCenter(width / 2, height / 2))
+               .force("collision", d3.forceCollide().radius(d => d.r + 8));  // 增加碰撞半径，确保节点不重叠
+
+            // 为节点设置随机初始位置，分布在更大的区域
+            nsData.nodes.forEach((d, i) => {
+                d.x = width / 2 + (Math.random() * 2 - 1) * width / 3;  // 扩大初始分布范围
+                d.y = height / 2 + (Math.random() * 2 - 1) * height / 3;
+            });
+
+            // 创建连线组
+            const link = zoomGroup.append("g")
+               .attr("class", "links")
+               .selectAll("path")
+               .data(nsData.links)
+               .enter().append("path")
+               .attr("class", "link")
+               .attr("stroke", d => (d.lineStyle?.color || nsData.link.lineStyle.color) || "#999")
+               .attr("stroke-width", d => (d.lineStyle?.width || nsData.link.lineStyle.width) || 1.5)
+               .attr("fill", "none")
+               .attr("marker-end", "url(#arrowhead)");
+
+            // 创建连线文本组
+            const linkText = zoomGroup.append("g")
+               .attr("class", "link-texts")
+               .selectAll("text")
+               .data(nsData.links)
+               .enter().append("text")
+               .attr("class", "link-text")
+               .attr("fill", d => (d.label?.color || nsData.link.label.color) || "#333")
+               .attr("font-size", d => (d.label?.fontSize || nsData.link.label.fontSize) || 10)
+               .text(d => d.relation || "");
+
+            // 创建节点组
+            const node = zoomGroup.append("g")
+               .attr("class", "nodes")
+               .selectAll(".node")
+               .data(nsData.nodes)
+               .enter().append("g")
+               .attr("class", "node")
+               .call(d3.drag()
+                   .on("start", dragstarted)
+                   .on("drag", dragged)
+                   .on("end", dragended));
+
+            // 为每个节点添加形状和图片
+            node.each(function(d) {
+                const nodeGroup = d3.select(this);
+                
+                // 创建圆形裁剪路径
+                const clipPath = defs.append("clipPath")
+                   .attr("id", "clip-circle-" + d.id);
+                
+                clipPath.append("circle")
+                   .attr("r", d.r - 1)  // 稍微缩小裁剪区域，避免图片边缘显示不完全
+                   .attr("cx", 0)
+                   .attr("cy", 0);
+
+                // 添加节点形状
+                nodeGroup.append("circle")
+                   .attr("r", d.r)
+                   .attr("fill", (d.itemStyle?.color || nsData.node.itemStyle.color) || "#69b3a2")
+                   .attr("stroke", (d.itemStyle?.borderColor || nsData.node.itemStyle.borderColor) || "#333")
+                   .attr("stroke-width", (d.itemStyle?.borderWidth || nsData.node.itemStyle.borderWidth) || 1);
+
+                // 添加图片，使用裁剪路径
+                if (d.itemStyle.image) {
+                    nodeGroup.append("image")
+                       .attr("xlink:href", d.itemStyle.image)
+                       .attr("clip-path", "url(#clip-circle-" + d.id + ")")
+                       .attr("x", -d.r)
+                       .attr("y", -d.r)
+                       .attr("width", d.r * 2)
+                       .attr("height", d.r * 2)
+                       .attr("preserveAspectRatio", "xMidYMid slice");
+                }
+
+                // 添加节点文本
+                const textElement = nodeGroup.append("text")
+                   .attr("class", d.label.position === "inside" ? "text-inside" : "text-bottom")
+                   .attr("dy", d.label.position === "inside" ? 0 : d.r + 10)
+                   .attr("fill", (d.label?.color || nsData.node.label.color) || "#333")
+                   .attr("font-family", (d.label?.fontFamily || nsData.node.label.fontFamily) || "sans-serif")
+                   .attr("font-weight", (d.label?.fontWeight || nsData.node.label.fontWeight) || "normal")
+                   .attr("font-size", (d.label?.fontSize || nsData.node.label.fontSize) || 12)
+                   .text(d.name);
+
+                // 计算文本宽度，调整字体大小避免溢出
+                const textWidth = textElement.node().getComputedTextLength();
+                if (textWidth > d.r * 2 - 10 && d.label.position === "inside") {
+                    // 文本太长，缩小字体
+                    const fontSize = parseInt(textElement.attr("font-size"));
+                    const newFontSize = Math.max(8, fontSize * (d.r * 2 - 10) / textWidth);
+                    textElement.attr("font-size", newFontSize);
+                }
+            });
+
+            // 存储节点选择器供全局使用
+            window.nodes = node;
+
+            // 设置节点交互
+            node.on("mouseover", function(event, d) {
+                if (nsData.tooltip.show) {
+                    tooltip.transition()
+                       .duration(200)
+                       .style("opacity", 0.9);
+                    tooltip.html(formatter(d))
+                       .style("left", (event.pageX + 10) + "px")
+                       .style("top", (event.pageY - 28) + "px");
+                }
+            })
+            .on("mouseout", function() {
+                if (nsData.tooltip.show) {
+                    tooltip.transition()
+                       .duration(500)
+                       .style("opacity", 0);
+                }
+            });
+
+            // 定义模拟力
+            simulation
+               .nodes(nsData.nodes)
+               .on("tick", ticked);
+
+            simulation.force("link")
+               .links(nsData.links);
+
+            // 模拟更新函数
+            function ticked() {
+                link.attr("d", function(d) {
+                    // 计算贝塞尔曲线控制点
+                    const dx = d.target.x - d.source.x,
+                          dy = d.target.y - d.source.y,
+                          dr = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // 控制点位置
+                    const controlPoint = {
+                        x: d.source.x + dx / 2 + dy / 6,
+                        y: d.source.y + dy / 2 - dx / 6
+                    };
+                    
+                    return `M ${d.source.x},${d.source.y} 
+                            Q ${controlPoint.x},${controlPoint.y} 
+                            ${d.target.x},${d.target.y}`;
+                });
+
+                linkText.attr("transform", function(d) {
+                    // 计算文本位置
+                    const x = (d.source.x + d.target.x) / 2,
+                          y = (d.source.y + d.target.y) / 2;
+                    return `translate(${x},${y})`;
+                });
+
+                node.attr("transform", function(d) {
+                    return `translate(${d.x},${d.y})`;
+                });
+            }
+
+            // 拖动事件处理
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+        }
+
+        // 页面加载完成后初始化
+        window.onload = function() {
+            initDatabase();
+            initGraph();
+        };
+    </script>
+</body>
+</html>    
